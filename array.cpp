@@ -1,60 +1,63 @@
 #include <iostream>
 #include <string>
+
 using namespace std;
 
-float hitungRata(int *p, int n){
-	// Wadah penampung total
-	float total;
+float ratarata(int *p , int n){
+	float total = 0; // Variabel penampung total nilai
 
-	// Tambahkan semua value dari array
+	// Tambah semua nilai yang ada di array
 	for (int i = 0; i < n; i++){
 		total += *(p + i);
 	}
 
-	// Kembalikan hasil rata-rata ke main
+	// Cari rata-rata dan kembalikan hasilnya
 	return total / n;
 }
 
-int main(){
-	string nama, nim;
-	int nilai[10];
+int main (){
+	string nama, nim; // String untuk Nama dan NIM mahasiswa
+	int i, n; // Variable global untuk looping dan jumlah nilai
 
-	// Menghubungkan pointer ke array
-	int* p = nilai;
-
-	// Indeks dan jumlah nilai
-	int i, n;
-
+	// ==== Input Data ====
 	cout << endl;
-	cout << "Masukkan Nama Mahasiswa : ";
-	getline(cin, nama);
-	cout << "Masukkan Nim Mahasiswa : ";
+	cout << "Masukkan Nama Mahasiswa\t" << ": ";
+	getline(cin, nama); // getline() agar bisa menggunakan spasi
+	cout << "Masukkan NIM Mahasiswa\t" << ": ";
 	getline(cin, nim);
-	cout << "Masukkan Jumlah Nilai : ";
+	cout << "Masukkan Jumlah Nilai\t" << ": ";
 	cin >> n;
+	
 	cout << endl;
 	
-	// Input nilai sesuai jumlah (n)
+	// ==== Array ====
+	int *p = new int[n]; // Alokasi memori untuk array nilai dengan ukuran n
+
+	// ==== Input Nilai ke Array ====
 	for (i = 0; i < n; i++) {
 		cout << "Masukkan Nilai ke-" << i + 1 << " = ";
 		cin >> *(p + i);
 	}
 	
-	// Menampilkan output data
+	// Cari rata-rata menggunakan fungsi ratarata()
+	float rataratanilai = ratarata(p, n);
+
 	cout << endl;
-	cout << "==== Data Mahasiswa ====" << endl;
-	cout << "Nama Mahasiswa : " << nama << endl;
-	cout << "NIM Mahasiswa : " << nim << endl;
-	
+	cout << endl;
+
+	// ==== Output Data ====
+	cout << "==== Data Mahasiswa ====\n\n";
+	cout << "Nama Mahasiswa\t" << ": " << nama << endl;
+	cout << "NIM Mahasiswa\t" << ": " << nim << endl;
+	cout << endl;
+
 	for (i = 0; i < n; i++) {
-		cout << "Nilai ke-" << i + 1 << " = " << *(p + i);
-		cout << endl;
+		cout << "Nilai ke-" << i + 1 << " = " << *(p + i) << endl;
 	}
-
-	// Hitung rata-rata menggunakan 
-	float hasilratarata = hitungRata(p,n);
-	cout << "Rata-rata nilai = " << hasilratarata << endl;
-
-return 0;	
-}
+	cout << endl;
+	cout << "Rata-rata nilai\t" << ": " << rataratanilai << endl;
+	cout << endl;
 	
+	delete[] p; // Dealokasi memori yang telah digunakan untuk array
+	return 0;
+}

@@ -5,6 +5,7 @@
 
 using namespace std;
 
+// Struktur Mahasiswa sebagai Node Linked List
 struct Mahasiswa {
     string nama;
     string nim;
@@ -12,11 +13,13 @@ struct Mahasiswa {
     int nilai[MAX];
     float rataRata;
     char nilaiHuruf;
+    Mahasiswa* next; // Pointer untuk menunjuk ke node selanjutnya
 };
 
-Mahasiswa antrian[MAX];
-int head = 0;
-int tail = 0;
+// Pointer Global untuk manajemen Linked List
+Mahasiswa* head = NULL; // Menunjuk ke node pertama
+Mahasiswa* tail = NULL; // Menunjuk ke node terakhir
+int countQueue = 0;    // Melacak jumlah node (pengganti index pada array)
 
 // Fungsi Hitung Rata-Rata
 float rataRata(int* p, int n){
@@ -27,6 +30,22 @@ float rataRata(int* p, int n){
     }
 
     return (n > 0) ? total / n : 0;
+}
+
+// Fungsi Tukar Data (Bantuan untuk Sorting Linked List)
+// Menukar isi data antar dua node tanpa mengubah alamat/pointer next-nya
+void tukarData(Mahasiswa* a, Mahasiswa* b) {
+    Mahasiswa* nextA = a->next; // Simpan pointer next asli
+    Mahasiswa* nextB = b->next;
+
+    // Lakukan copy seluruh isi struct
+    Mahasiswa temp = *a;
+    *a = *b;
+    *b = temp;
+
+    // Kembalikan pointer next ke posisi semula agar rantai list tidak rusak
+    a->next = nextA;
+    b->next = nextB;
 }
 
 // Fungsi Tentukan Nilai Huruf
@@ -44,7 +63,8 @@ char tentukanNilaiHuruf(float rata){
 
 // === Fungsi Pengecekan Queue ===
 bool isFull(){
-    if (tail == MAX){
+    // Cek berdasarkan jumlah node yang sudah dialokasikan
+    if (countQueue >= MAX){
         return true;
     } else {
         return false;
@@ -52,65 +72,79 @@ bool isFull(){
 }
 
 bool isEmpty(){
-    if (tail == 0 && head == 0){
+    // Jika head NULL berarti tidak ada data sama sekali
+    if (head == NULL){
         return true;
     } else {
         return false;
     }
 }
 
-// === Fungsi Enqueue ===
+// === Fungsi Enqueue (Tambah Data di Akhir) ===
 void enqueue(){
     if (isFull()){
         cout << "\n==== Antrean Penuh ====" << endl;
         return;
     } else {
-        // Jika Masih Ada Ruang
+        // Alokasi memori dinamis untuk node baru
+        Mahasiswa* nodeBaru = new Mahasiswa();
+
         cout << "\n==== Input Data ====" << endl;
         cout << "Masukkan Nama Mahasiswa : ";
-        getline(cin, antrian[tail].nama);
+        getline(cin, nodeBaru->nama);
         cout << "Masukkan NIM Mahasiswa : ";
-        getline(cin, antrian[tail].nim);
+        getline(cin, nodeBaru->nim);
         cout << "Masukkan Jumlah Nilai : ";
-        cin >> antrian[tail].jumlahNilai;
+        cin >> nodeBaru->jumlahNilai;
 
-        cout << "\n"; // Baris Kosong
+        cout << "\n";
 
-        // Pointer Untuk Memasukkan & Mengakses Data Array Nilai
-        int* p = antrian[tail].nilai;
+        int* p = nodeBaru->nilai;
 
-        // Loop Untuk Input Nilai Sesuai Jumlah Nilai
-        for (int i = 0; i < antrian[tail].jumlahNilai; i++){
+        for (int i = 0; i < nodeBaru->jumlahNilai; i++){
             cout << "Masukkan Nilai ke-" << i + 1 << " = ";
             cin >> *(p + i);
         }
-        cin.ignore(); // Bersihkan Buffer
+        cin.ignore();
 
-        // Mencari Nilai Rata-Rata dan Nilai Huruf Menggunakan Fungsi Yang Sudah Ada
-        antrian[tail].rataRata = rataRata(p, antrian[tail].jumlahNilai);
-        antrian[tail].nilaiHuruf = tentukanNilaiHuruf(antrian[tail].rataRata);
+        nodeBaru->rataRata = rataRata(p, nodeBaru->jumlahNilai);
+        nodeBaru->nilaiHuruf = tentukanNilaiHuruf(nodeBaru->rataRata);
+        nodeBaru->next = NULL; // Node baru akan jadi node terakhir
 
-        tail++;
+        // Hubungkan node baru ke dalam list
+        if (isEmpty()){
+            head = nodeBaru;
+            tail = nodeBaru;
+        } else {
+            tail->next = nodeBaru; // Sambungkan dari ekor lama
+            tail = nodeBaru;       // Geser penanda ekor ke node baru
+        }
+
+        countQueue++;
         cout << "\n==== Data Berhasil Ditambahkan ====" << endl;
     }
 }
 
-// === Fungsi Dequeue ===
+// === Fungsi Dequeue (Hapus Data di Awal) ===
 void dequeue(){
     if (isEmpty()){
         cout << "\n==== Antrean Kosong ====" << endl;
     } else {
-        cout << "\n==== Data Mahasiswa Bernama -- " << antrian[head].nama << " -- Berhasil Dihapus ====" << endl;
-        // Loop Untuk Menimpa Dan Memajukan Data
-        for (int i = head; i < tail - 1; i++){
-            antrian[i] = antrian[i + 1];
-        }
+        Mahasiswa* hapus = head; // Simpan alamat node yang akan dihapus
+        cout << "\n==== Data Mahasiswa Bernama -- " << hapus->nama << " -- Berhasil Dihapus ====" << endl;
+        
+        head = head->next; // Geser head ke node selanjutnya
+        delete hapus;      // Bebaskan memori node yang dihapus
+        countQueue--;
 
-        tail--; // Geser Ke Depan
+        // Jika list menjadi kosong setelah penghapusan
+        if (head == NULL){
+            tail = NULL;
+        }
     }
 }
 
-// === Fungsi Tampilkan ===
+// === Fungsi Tampilkan (Traversing Linked List) ===
 void tampilkan(){
     if (isEmpty()){
         cout << "\n==== Antrean Kosong ====" << endl;
@@ -118,58 +152,66 @@ void tampilkan(){
     } else {
         cout << "\n==== Data Saat Ini ====" << endl;
 
-        // Loop Untuk Menampilkan Data
-        for (int i = head; i < tail; i++){
-            cout << "Nama\t\t : " << antrian[i].nama << endl;
-            cout << "NIM\t\t : " << antrian[i].nim << endl;
+        // Gunakan pointer bantuan untuk menelusuri list dari head
+        Mahasiswa* curr = head;
+        while (curr != NULL){
+            cout << "Nama\t\t : " << curr->nama << endl;
+            cout << "NIM\t\t : " << curr->nim << endl;
             
-            cout << "\n"; // Baris Kosong
+            cout << "\n";
 
-            int* p = antrian[i].nilai;
+            int* p = curr->nilai;
 
-            // Loop Untuk Menampilkan Nilai
-            for (int j = 0; j < antrian[i].jumlahNilai; j++){
+            for (int j = 0; j < curr->jumlahNilai; j++){
                 cout << "Nilai ke-" << j + 1 << "\t = " << *(p + j) << endl;
             }
 
-            cout << "\nNilai Rata-Rata\t = " << antrian[i].rataRata << endl;
-            cout << "Nilai Huruf\t = " << antrian[i].nilaiHuruf << endl;
+            cout << "\nNilai Rata-Rata\t = " << curr->rataRata << endl;
+            cout << "Nilai Huruf\t = " << curr->nilaiHuruf << endl;
             cout << "--------------------------\n";
+
+            curr = curr->next; // Pindah ke node selanjutnya
         }
     }
 }
 
-// === Fungsi Bersihkan (Hapus Semua Data) ===
+// === Fungsi Bersihkan (Hapus Semua Node & Free Memory) ===
 void bersihkan(){
     if (isEmpty()){
         cout << "\n==== Antrean Kosong ====" << endl;
         return;
     } else {
-        tail = 0;
-        head = 0;
+        // Hapus satu per satu sampai head NULL
+        while (head != NULL){
+            Mahasiswa* hapus = head;
+            head = head->next;
+            delete hapus;
+        }
+        tail = NULL;
+        countQueue = 0;
         cout << "\n==== Seluruh Data Dibersihkan ====" << endl;
     }    
 }
 
-// === Fungsi Sorting Berdasarkan Rata-Rata (DESC) ===
+// === Fungsi Sorting Berdasarkan Rata-Rata (Selection Sort pada Linked List) ===
 void urutkanSelection(){
-    if (tail <= 1){
+    if (countQueue <= 1){
         cout << "\n==== Belum Cukup Data Untuk Diurutkan ====" << endl;
     } else {
-        for (int i = head; i < tail - 1; i++){
-            int maxIndex = i;
+        // Loop i sebagai pointer acuan (seperti index i pada array)
+        for (Mahasiswa* i = head; i->next != NULL; i = i->next){
+            Mahasiswa* maxNode = i;
 
-            // Loop untuk mengurutkan dari yang terbesar ke yang terkecil (DESC)
-            for (int j = i + 1; j < tail; j++){
-                if (antrian[j].rataRata > antrian[maxIndex].rataRata){
-                    maxIndex = j;
+            // Loop j mencari nilai terbesar di sisa list
+            for (Mahasiswa* j = i->next; j != NULL; j = j->next){
+                if (j->rataRata > maxNode->rataRata){
+                    maxNode = j;
                 }
             }
 
-            if (maxIndex != i){
-                Mahasiswa temp = antrian[i];
-                antrian[i] = antrian[maxIndex];
-                antrian[maxIndex] = temp;
+            // Jika ditemukan yang lebih besar, tukar isinya
+            if (maxNode != i){
+                tukarData(i, maxNode);
             }
         }
         cout << "\n==== Data berhasil diurutkan berdasarkan Rata-Rata ====" << endl;
@@ -179,67 +221,59 @@ void urutkanSelection(){
 
 // === Fungsi Sorting Berdasarkan Nama (ASC) ===
 void urutkanByNama() {
-    for (int i = 0; i < tail - 1; i++) {
-        int minIndex = i;
-        for (int j = i + 1; j < tail; j++) {
-            if (antrian[j].nama < antrian[minIndex].nama) {
-                minIndex = j;
+    if (isEmpty()) return;
+    for (Mahasiswa* i = head; i->next != NULL; i = i->next) {
+        Mahasiswa* minNode = i;
+        for (Mahasiswa* j = i->next; j != NULL; j = j->next) {
+            if (j->nama < minNode->nama) {
+                minNode = j;
             }
         }
-        Mahasiswa temp = antrian[i];
-        antrian[i] = antrian[minIndex];
-        antrian[minIndex] = temp;
+        if (minNode != i) tukarData(i, minNode);
     }
 }
 
 // === Fungsi Sorting Berdasarkan NIM (ASC) ===
 void urutkanByNIM() {
-    for (int i = 0; i < tail - 1; i++) {
-        int minIndex = i;
-        for (int j = i + 1; j < tail; j++) {
-            if (antrian[j].nim < antrian[minIndex].nim) {
-                minIndex = j;
+    if (isEmpty()) return;
+    for (Mahasiswa* i = head; i->next != NULL; i = i->next) {
+        Mahasiswa* minNode = i;
+        for (Mahasiswa* j = i->next; j != NULL; j = j->next) {
+            if (j->nim < minNode->nim) {
+                minNode = j;
             }
         }
-        Mahasiswa temp = antrian[i];
-        antrian[i] = antrian[minIndex];
-        antrian[minIndex] = temp;
+        if (minNode != i) tukarData(i, minNode);
     }
 }
 
-// === Fungsi Cari Berdasarkan Nama (Binary Search) ===
+// === Fungsi Cari Berdasarkan Nama (Linear Search pada Linked List) ===
 void cariByNama() {
     if (isEmpty()) {
         cout << "\n==== Antrean Kosong ====" << endl;
         return;
     }
 
-    // Memanggil fungsi sorting sebelum binary search
-    urutkanByNama();
-
     string cari;
     cout << "Masukkan Nama yang dicari: ";
     getline(cin, cari);
 
-    int kiri = 0, kanan = tail - 1;
+    Mahasiswa* curr = head;
     bool found = false;
 
-    while (kiri <= kanan) {
-        int tengah = kiri + (kanan - kiri) / 2;
-        if (antrian[tengah].nama == cari) {
-            cout << "\n==== Data --" << cari << "-- Ditemukan (Hasil Binary Search) ====" << endl;
-            cout << "Nama\t\t : " << antrian[tengah].nama << endl;
-            cout << "NIM\t\t : " << antrian[tengah].nim << endl;
-            cout << "Nilai Rata-Rata\t = " << antrian[tengah].rataRata << endl;
-            cout << "Nilai Huruf\t = " << antrian[tengah].nilaiHuruf << endl;
+    // Telusuri satu per satu sampai ketemu atau sampai list habis
+    while (curr != NULL) {
+        if (curr->nama == cari) {
+            cout << "\n==== Data --" << cari << "-- Ditemukan (Hasil Linear Search) ====" << endl;
+            cout << "Nama\t\t : " << curr->nama << endl;
+            cout << "NIM\t\t : " << curr->nim << endl;
+            cout << "Nilai Rata-Rata\t = " << curr->rataRata << endl;
+            cout << "Nilai Huruf\t = " << curr->nilaiHuruf << endl;
             cout << "--------------------------" << endl;
             found = true;
             break;
-        } else if (antrian[tengah].nama < cari) {
-            kiri = tengah + 1;
-        } else {
-            kanan = tengah - 1;
         }
+        curr = curr->next;
     }
 
     if (!found) {
@@ -247,39 +281,32 @@ void cariByNama() {
     }
 }
 
-// === Fungsi Cari Berdasarkan NIM (Binary Search) ===
+// === Fungsi Cari Berdasarkan NIM (Linear Search pada Linked List) ===
 void cariByNIM() {
     if (isEmpty()) {
         cout << "\n==== Antrean Kosong ====" << endl;
         return;
     }
 
-    // Panggil fungsi sorting sebelum binary search
-    urutkanByNIM();
-
     string cari;
     cout << "Masukkan NIM yang dicari: ";
     getline(cin, cari);
 
-    int kiri = 0, kanan = tail - 1;
+    Mahasiswa* curr = head;
     bool found = false;
 
-    while (kiri <= kanan) {
-        int tengah = kiri + (kanan - kiri) / 2;
-        if (antrian[tengah].nim == cari) {
-            cout << "\n==== Data --" << cari << "-- Ditemukan (Hasil Binary Search) ====" << endl;
-            cout << "Nama\t\t : " << antrian[tengah].nama << endl;
-            cout << "NIM\t\t : " << antrian[tengah].nim << endl;
-            cout << "Nilai Rata-Rata\t = " << antrian[tengah].rataRata << endl;
-            cout << "Nilai Huruf\t = " << antrian[tengah].nilaiHuruf << endl;
+    while (curr != NULL) {
+        if (curr->nim == cari) {
+            cout << "\n==== Data --" << cari << "-- Ditemukan (Hasil Linear Search) ====" << endl;
+            cout << "Nama\t\t : " << curr->nama << endl;
+            cout << "NIM\t\t : " << curr->nim << endl;
+            cout << "Nilai Rata-Rata\t = " << curr->rataRata << endl;
+            cout << "Nilai Huruf\t = " << curr->nilaiHuruf << endl;
             cout << "--------------------------" << endl;
             found = true;
             break;
-        } else if (antrian[tengah].nim < cari) {
-            kiri = tengah + 1;
-        } else {
-            kanan = tengah - 1;
         }
+        curr = curr->next;
     }
 
     if (!found) {
@@ -303,7 +330,6 @@ int main(){
         cin >> pilihan;
         cin.ignore();
 
-        // Switch Case
         switch (pilihan)
         {
         case 1:
@@ -322,9 +348,8 @@ int main(){
             urutkanSelection();
             break;
         case 6:
-            system("cls"); // Bersihkan Console                
+            system("cls");               
         
-            // Menu pilihan pencarian berdasarkan kategori
             int pilihanCari;
             do {
                 cout << "\n==== MENU PENCARIAN ====" << endl;
